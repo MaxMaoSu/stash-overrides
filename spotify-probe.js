@@ -1,15 +1,17 @@
-// 诊断用：记录 remote-config / nebula 响应的真实格式，不做任何改写。
-// iOS 版返回裸 protobuf；桌面版 1.3.9 的响应在 protobuf 解码时报
-// "invalid wire type 6"，怀疑是压缩或换了编码，先看清楚再决定怎么改。
+// 诊断用：打印 remote-config 响应的 JSON 结构，不做改写。
+// 桌面版返回 application/json（iOS 版是裸 protobuf），
+// Stash 已经把 body 解析成对象，可以直接读写。
 const r = $response || {};
-const h = r.headers || {};
-const body = r.body;
-const len = typeof body === "string" ? body.length : (body && body.byteLength) || 0;
-const head = typeof body === "string" ? body.slice(0, 48) : `[${typeof body}]`;
-console.log(
-  `PROBE status=${r.status}` +
-  ` ce=${h["Content-Encoding"] || h["content-encoding"] || "-"}` +
-  ` ct=${h["Content-Type"] || h["content-type"] || "-"}` +
-  ` len=${len} head=${head}`
-);
+const b = r.body;
+let keys = "-";
+let preview = "-";
+if (b && typeof b === "object") {
+  keys = Object.keys(b).join(",");
+  preview = JSON.stringify(b).slice(0, 300);
+} else if (typeof b === "string") {
+  preview = b.slice(0, 300);
+}
+console.log(`PROBE status=${r.status} len=${r.body ? JSON.stringify(b).length : 0}`);
+console.log(`KEYS ${keys}`);
+console.log(`PREVIEW ${preview}`);
 $done({});
