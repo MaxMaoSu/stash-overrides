@@ -2,74 +2,84 @@
 #!name = Spotify 解锁
 #!desc = 适配 Spotify 9.1.98 的 Nebula / Remote Config 接口及 Casita 首页去广告
 name: Spotify 解锁
-desc: 解锁 Premium 账号属性、去广告、禁止 QUIC 绕过 MITM
+desc: 解锁 Premium 账号属性、去广告
+
 rules:
-  # Spotify 9.1.98 起用 HTTP/3 直连 spclient，不掐 QUIC 就完全绕过 MITM
-  - AND,((DOMAIN-SUFFIX,spotify.com),(PROTOCOL,QUIC)),REJECT-DROP
-  - DOMAIN,aet.spotify.com,REJECT-DROP
+  # 只对需要 MITM 的 spclient 域名拦截 QUIC。
+  # 不要写成 DOMAIN-SUFFIX,spotify.com —— 会连带把音频 CDN 和其它 Spotify 服务的
+  # HTTP/3 也降级到 TCP，白白增加延迟。
+  - AND,((DOMAIN-SUFFIX,spclient.spotify.com),(PROTOCOL,QUIC)),REJECT-DROP
+  - AND,((DOMAIN,spclient.wg.spotify.com),(PROTOCOL,QUIC)),REJECT-DROP
+  # 遥测/网络探测端点：REJECT 即可，REJECT-DROP 直接断连会让客户端反复重试
+  - DOMAIN,aet.spotify.com,REJECT
+
 http:
   mitm:
+    # 只解密 spclient。用 *.spotify.com 会把 api/login5/apresolve 等无关域名一起解密，
+    # 既增加开销又可能影响其它功能。
+    # Stash 支持中缀通配：*spclient.spotify.com 能匹配 guc3-spclient.spotify.com。
     - 'spclient.wg.spotify.com'
-    # 必须用 *.spotify.com：实际域名是 guc3-spclient.spotify.com，
-    # '*spclient.spotify.com' 这种标签内通配在 Stash 上不匹配
-    - '*.spotify.com'
+    - '*spclient.spotify.com'
   script:
-    # 删掉 If-None-Match / If-Modified-Since，否则服务器返回 304 无 body，
-    # spotify-proto 拿到空响应只能 passthrough
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:nebula\/v1\/configuration\/attributes|remote-config-resolver\/v3\/configuration|bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize)'
+    # 第一步：删掉条件请求头。服务器命中 ETag 会返回 304，而 304 没有响应体，
+    # spotify-proto 拿到空 body 只能 passthrough，账号属性永远改不掉。
+    # Stash 没有 header-rewrite 键，只能用 request 脚本改 $request.headers。
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:nebula\/v1\/configuration\/attributes|remote-config-resolver\/v3\/configuration|bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize)(?:\?.*)?$'
       name: spotify-strip304
       type: request
       timeout: 5
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/casita\/v1\/home\/default\/?(\?[^#]*)?$'
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/casita\/v1\/home\/default\/?(?:\?.*)?$'
       name: spotify-home
       type: response
       require-body: true
       binary-mode: true
-      timeout: 30
-    - match: '^https:\/\/(spclient\.wg\.spotify\.com|.*-spclient\.spotify\.com(:443)?)\/browsita\/v.\/browse'
+      timeout: 10
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/browsita\/v[0-9]+\/browse(?:\?.*)?$'
       name: spotify-search
       type: response
       require-body: true
       binary-mode: true
-      timeout: 30
-    - match: '^https:\/\/(spclient\.wg\.spotify\.com|.*-spclient\.spotify\.com(:443)?)\/scrollsita\/v.\/scroll\/spotify'
+      timeout: 10
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/scrollsita\/v[0-9]+\/scroll\/spotify(?:\?.*)?$'
       name: spotify-scroll
       type: response
       require-body: true
       binary-mode: true
-      timeout: 30
-    # 406KB 内嵌 protobuf schema，WebKit 引擎默认 10s 跑不完会 timed out，
-    # timeout 必须给到 30
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize|nebula\/v1\/configuration\/attributes|remote-config-resolver\/v3\/configuration)\/?(\?[^#]*)?$'
+      timeout: 10
+    # spotify-proto 内嵌 406KB protobuf schema，WebKit 引擎默认 10 秒跑不完，
+    # 会报 script execution timed out 且只在 Core/logs 里可见。必须给足 30 秒。
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize|nebula\/v1\/configuration\/attributes|remote-config-resolver\/v3\/configuration)\/?(?:\?.*)?$'
       name: spotify-proto
       type: response
       require-body: true
       binary-mode: true
       timeout: 30
-    - match: '^https:\/\/(spclient\.wg\.spotify\.com|.*-spclient\.spotify\.com(:443)?)\/(artistview\/v1\/artist|album-entity-view\/v2\/album)\/'
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:artistview\/v1\/artist|album-entity-view\/v2\/album)\/'
       name: spotify-json
       type: request
-      timeout: 30
+      timeout: 10
   rewrite:
     - ^https?:\/\/(spclient\.wg|.*-spclient)\.spotify\.com(:443)?\/pendragon - reject-200
     - ^https?:\/\/.*-spclient\.spotify\.com(:443)?\/pam-view-service\/ - reject-200
     - ^https?:\/\/.*37i9dQZF1EYkqdzj48dyYq - reject-200
+
+# 脚本锁定到具体 commit，避免上游改动导致行为漂移。
+# 升级方式：改这里的 SHA，重新拉取后验证 script-logs 里没有 passthrough / timed out。
 script-providers:
   spotify-strip304:
     url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify-strip304.js
     interval: 86400
-  # 以下四个来自 Reukix/ukix，2026-11-11 适配 Spotify 9.1.98
   spotify-home:
-    url: https://raw.githubusercontent.com/Reukix/ukix/refs/heads/main/js/Spotify-home.js
+    url: https://raw.githubusercontent.com/Reukix/ukix/406b5f63dd461d551f1b03098d374bae5c7b1296/js/Spotify-home.js
     interval: 86400
   spotify-search:
-    url: https://raw.githubusercontent.com/Reukix/ukix/refs/heads/main/js/Spotify-search.js
+    url: https://raw.githubusercontent.com/Reukix/ukix/406b5f63dd461d551f1b03098d374bae5c7b1296/js/Spotify-search.js
     interval: 86400
   spotify-scroll:
-    url: https://raw.githubusercontent.com/Reukix/ukix/refs/heads/main/js/Spotify-scroll.js
+    url: https://raw.githubusercontent.com/Reukix/ukix/406b5f63dd461d551f1b03098d374bae5c7b1296/js/Spotify-scroll.js
     interval: 86400
   spotify-proto:
-    url: https://raw.githubusercontent.com/Reukix/ukix/refs/heads/main/js/Spotify-proto.js
+    url: https://raw.githubusercontent.com/Reukix/ukix/406b5f63dd461d551f1b03098d374bae5c7b1296/js/Spotify-proto.js
     interval: 86400
   spotify-json:
     url: https://raw.githubusercontent.com/app2smile/rules/master/js/spotify-json.js

@@ -12,12 +12,34 @@
 https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/Spotify.stoverride
 ```
 
-要点：
+### 为什么原版规则失效
 
-- 必须拦截 QUIC，否则 Spotify 用 HTTP/3 直连，完全绕过 MITM
-- MITM 主机写 `*.spotify.com`，`*spclient.spotify.com` 这种标签内通配在 Stash 上不匹配
-- `spotify-strip304` 去掉 `If-None-Match`，否则服务器返回 304 无 body，脚本无从改写
-- `spotify-proto` 是 406KB 的内嵌 protobuf 脚本，`timeout` 必须给到 30 秒，默认 10 秒会超时
-- 音质仍无法设为「超高」，这是规则方案的固有限制
+app2smile 的 `spotify.module` / `spotify.stoverride`（2025.06.27）在 9.1.98 上完全不生效，
+四个原因叠加，任何一个都能让脚本不执行：
 
-脚本来自 [Reukix/ukix](https://github.com/Reukix/ukix)（proto/home/search/scroll）和 [app2smile/rules](https://github.com/app2smile/rules)（json）。
+| 原因 | 现象 | 修法 |
+|---|---|---|
+| 接口迁移 | 脚本只匹配 `bootstrap/v1/bootstrap` 和 `user-customization-service/v1/customize`，9.1.98 改走 `nebula/v1/configuration/attributes` 和 `remote-config-resolver/v3/configuration`，零触发 | match 补齐新路径 |
+| QUIC 绕过 | Spotify 用 HTTP/3 直连，绕过 MITM，请求列表里连记录都没有 | `PROTOCOL,QUIC` 规则 reject |
+| 脚本超时 | `Spotify-proto.js` 406KB（内嵌 protobuf schema），WebKit 默认 10 秒跑不完，只在 `Core/logs` 报 `script execution timed out` | `timeout: 30` |
+| 304 无 body | 服务器命中 ETag 返回 304，脚本拿到空响应只能 passthrough | request 脚本删 `If-None-Match` |
+
+### 设计要点
+
+- **MITM 只覆盖 spclient**：`spclient.wg.spotify.com` + `*spclient.spotify.com`。
+  Stash 支持中缀通配，`*spclient.spotify.com` 能匹配 `guc3-spclient.spotify.com`。
+  不要写成 `*.spotify.com`，那会把 api / login5 / apresolve 等无关域名一起解密。
+- **QUIC 只拦 spclient**：音频 CDN 和其它 Spotify 服务继续走 HTTP/3，不受影响。
+- **timeout 分级**：只有 406KB 的 `spotify-proto` 需要 30 秒，其余 5–10 秒。
+- **脚本锁 commit**：Reukix 的四个脚本固定在 `406b5f6`，避免上游改动导致行为漂移。
+  升级时改 SHA，重载后确认 `script-logs/` 没有 `passthrough` / `timed out`。
+
+### 效果判据
+
+底部导航「主页 / 搜索 / 音乐库 / **Premium** / 创建」里的 Premium 按钮消失——
+免费账号该按钮恒定存在，消失说明 `nebula` 返回的账号属性已被改成 premium。
+
+残留限制：音质仍不能设为「超高」。规则方案只能改账号属性，改不了音源权限。
+
+脚本来自 [Reukix/ukix](https://github.com/Reukix/ukix)（proto/home/search/scroll）
+和 [app2smile/rules](https://github.com/app2smile/rules)（json）。
