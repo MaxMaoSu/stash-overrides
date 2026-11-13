@@ -24,6 +24,11 @@ http:
     - '*spclient.spotify.com'
     - '*-spclient.wg.spotify.com'
   script:
+    # 临时诊断：上报 spclient 请求 URL，定位完删除
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/'
+      name: spotify-trace
+      type: request
+      timeout: 5
     # 广告投递与推广页：直接伪造空 200，客户端不渲染。
     # gabo-receiver-service 下发音频广告和播放页的 Sponsored 卡片，
     # pam-view-service 是 Premium 全屏推广页，pendragon 是 Pendo 引导弹窗，
@@ -96,6 +101,9 @@ http:
 # strip304 与 json 走本仓库 / app2smile 的 main，改动后需等 interval 到期或重载。
 # 升级方式：改 SHA → 重载 → 确认 script-logs 尾部时间戳更新且无 passthrough / timed out。
 script-providers:
+  spotify-trace:
+    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-trace-v3.js
+    interval: 86400
   spotify-block-ads:
     url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-block-ads.js
     interval: 86400
