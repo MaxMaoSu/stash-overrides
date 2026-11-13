@@ -94,7 +94,7 @@ http:
 # 升级方式：改 SHA → 重载 → 确认 script-logs 尾部时间戳更新且无 passthrough / timed out。
 script-providers:
   spotify-trace:
-    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-trace.js
+    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-trace-v2.js
     interval: 86400
   spotify-block-ads:
     url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-block-ads.js
