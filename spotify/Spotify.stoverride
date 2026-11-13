@@ -26,8 +26,9 @@ http:
   script:
     # 广告投递与推广页：直接伪造空 200，客户端不渲染。
     # gabo-receiver-service 下发音频广告和播放页的 Sponsored 卡片，
-    # pam-view-service 是 Premium 全屏推广页，pendragon 是 Pendo 引导弹窗。
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:gabo-receiver-service|pam-view-service|pendragon)(?:[\/?]|$)'
+    # pam-view-service 是 Premium 全屏推广页，pendragon 是 Pendo 引导弹窗，
+    # ad-* 与 ads/ 是广告链路前缀兜底（ad-logic、ad-slot 等）。
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:gabo-receiver-service|pam-view-service|pendragon|ad-|ads\/)'
       name: spotify-block-ads
       type: request
       timeout: 5
