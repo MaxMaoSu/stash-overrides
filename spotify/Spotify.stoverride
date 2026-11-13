@@ -24,11 +24,6 @@ http:
     - '*spclient.spotify.com'
     - '*-spclient.wg.spotify.com'
   script:
-    # 临时诊断：上报全部 spclient 请求 URL，定位完删除
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/'
-      name: spotify-trace
-      type: request
-      timeout: 5
     # 广告投递与推广页：直接伪造空 200，客户端不渲染。
     # gabo-receiver-service 下发音频广告和播放页的 Sponsored 卡片，
     # pam-view-service 是 Premium 全屏推广页，pendragon 是 Pendo 引导弹窗，
@@ -46,6 +41,14 @@ http:
       timeout: 5
     - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/casita\/v1\/home\/default\/?(?:\?.*)?$'
       name: spotify-home
+      type: response
+      require-body: true
+      binary-mode: true
+      timeout: 10
+    # 播放页（正在播放详情）的 Sponsored 卡片由 nowplaying-view 下发，
+    # section 结构与 casita home 相同（标识以 |brand-ad 结尾），复用同一脚本。
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/nowplaying-view\/v[0-9]+\/'
+      name: spotify-nowplaying
       type: response
       require-body: true
       binary-mode: true
@@ -93,14 +96,14 @@ http:
 # strip304 与 json 走本仓库 / app2smile 的 main，改动后需等 interval 到期或重载。
 # 升级方式：改 SHA → 重载 → 确认 script-logs 尾部时间戳更新且无 passthrough / timed out。
 script-providers:
-  spotify-trace:
-    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-trace-v2.js
-    interval: 86400
   spotify-block-ads:
     url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-block-ads.js
     interval: 86400
   spotify-strip304:
     url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-strip304-v2.js
+    interval: 86400
+  spotify-nowplaying:
+    url: https://raw.githubusercontent.com/Reukix/ukix/406b5f63dd461d551f1b03098d374bae5c7b1296/js/Spotify-home.js
     interval: 86400
   spotify-home:
     url: https://raw.githubusercontent.com/Reukix/ukix/406b5f63dd461d551f1b03098d374bae5c7b1296/js/Spotify-home.js
