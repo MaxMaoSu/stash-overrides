@@ -1,5 +1,6 @@
 // Spotify 广告投递拦截。
-// gabo-receiver-service：音频广告与播放页的 Sponsored 卡片下发。
+// gabo-receiver-service：音频广告下发（播放页的 Sponsored 卡片不在这里，
+// 它走 sponsoredplaylist，见 spotify-block-sponsored.js）。
 // pam-view-service：Premium 全屏推广页（Premium Ads Marketplace）。
 // pendragon：Pendo 引导/推广弹窗。
 // ad-* / ads/：新的广告链路（ad-logic、ad-slot 等），按前缀兜底。

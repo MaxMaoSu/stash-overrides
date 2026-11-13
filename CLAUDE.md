@@ -92,10 +92,13 @@ Stash 按 URL 路径缓存脚本，`interval` 未到期不会重新下载。
   连带让同期 nebula 的脚本跑不掉。
 - **304 无 body**：服务器命中 ETag 返回 304 时脚本拿不到数据，用 request 脚本
   删 `If-None-Match` / `If-Modified-Since`。只在真删到头时才返回 headers。
-- **广告分两条链路**：音频广告与播放页的 Sponsored 卡片由 `gabo-receiver-service`
-  下发，Premium 全屏推广页走 `pam-view-service`，Pendo 引导弹窗走 `pendragon`。
-  三者在 request 阶段返回 `{}` 200 即可（`spotify-block-ads.js`）。
-  不能返回 0 字节 body：客户端按 JSON 解码会抛 SyntaxError，走异常分支。
+- **广告分三条链路**：音频广告走 `gabo-receiver-service`，Premium 全屏推广页走
+  `pam-view-service`，Pendo 引导弹窗走 `pendragon`，三者加 `ad-*` / `ads/` 前缀兜底，
+  统一在 request 阶段返回 `{}` 200（`spotify-block-ads.js`）。这几个接口按 JSON 解码，
+  返回 0 字节 body 会抛 SyntaxError。
+- **播放页的 Sponsored 卡片走 `sponsoredplaylist/v1/sponsored`**（protobuf，用
+  `spotify-block-sponsored.js` 返回空 body 200，返回 `{}` 反而解码失败）。
+  卡片再现时先查这条，不是 gabo。抓未知接口的方法见 skill `stash-override-authoring`「排障」。
 - **已知未解**：桌面版后续 nebula 请求在 proto 日志里不留记录（curl 触发正常），
   UI 表现为 premium 但无法从日志确认每次改写。
 - **效果判据**：底部导航的 Premium 入口消失，或窗口标题显示 `Spotify Premium`。

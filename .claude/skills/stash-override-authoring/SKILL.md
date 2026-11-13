@@ -135,11 +135,19 @@ $done({ headers });
 
 ### 自己伪造响应（替代 mock）
 
+挂在 `type: request` 上，match 到就直接返回，不再发往服务器。
+**body 要按接口的编码选，选错会让客户端走异常分支：**
+
 ```js
-$done({ response: { status: 200, body: "" } });   // 等价于 reject-200
+// JSON 接口：必须给合法 JSON，0 字节会抛 SyntaxError
+$done({ response: { status: 200, headers: { "content-type": "application/json",
+  "content-length": "2" }, body: "{}" } });
+
+// protobuf 接口：空 body 就是合法的空 message
+$done({ response: { status: 200, headers: { "content-length": "0" }, body: "" } });
 ```
 
-挂在 `type: request` 上，match 到就直接返回，不再发往服务器。
+不确定编码时先抓一次真实响应看 `content-type`。
 
 ### 拒绝某个域名
 
@@ -168,3 +176,30 @@ Mac 与 iPhone 共用 iCloud 覆写目录，**Mac 上改完会自动同步到手
 写完一定要验证。完整的分层排查流程见 skill `stash-override-debug`——
 核心是四件事各验一次：证书 issuer 是不是 Stash CA、目标规则有没有命中、
 脚本日志有没有当次记录、引擎日志有没有超时。
+
+**不知道某功能走哪个接口时，先抓真实请求再写规则。** 手机端日志拿不到，
+用临时 response 脚本上报：
+
+```js
+let finished = false;
+function finish() { if (finished) return; finished = true; $done({}); }
+// 兜底必须大于 $httpClient 的 timeout，否则慢请求会在发出前被中断
+setTimeout(finish, 5000);
+$httpClient.post({ url: "https://webhook.site/<一次性 token>", body: $request.url, timeout: 3 },
+  (error) => {
+    console.log(`trace ${error ? "error " + error : "ok"} ${$request.url}`);
+    finish();
+  });
+```
+
+- 挂在 `type: response`、match 整个目标域名上，跑几分钟后删掉。
+- **必须等 `$httpClient` 回调再 `$done`**：先 `$done` 会销毁脚本 VM，请求根本发不出去。
+- 保留 `console.log`：webhook 没记录时用它区分「脚本没跑」和「跑了但上报失败」。
+- 上报到 webhook.site 这类公网服务；局域网地址在手机 VPN 模式下多半不通。
+- **token 是一次性的**：`curl -X POST https://webhook.site/token` 现建，
+  用完 `curl -X DELETE -H "Authorization: Bearer <token>" https://webhook.site/token/<uuid>` 吊销，
+  并删掉带 token 的脚本与挂载。不要复用长期 token，也不要让它留在仓库历史里。
+- 拉取结果：`curl -H 'Accept: application/json' https://webhook.site/token/<token>/requests`
+- 顺带：手机上 Stash「工具 → 检视 HTTP 请求」能直接看到最近请求，脚本 GET 也会列出来，
+  可用来确认脚本是否已下载。
+
