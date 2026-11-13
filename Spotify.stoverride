@@ -82,7 +82,7 @@ http:
 # 升级方式：改 SHA → 重载 → 确认 script-logs 尾部时间戳更新且无 passthrough / timed out。
 script-providers:
   spotify-probe:
-    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify-probe.js?v=2
+    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify-probe2.js
     interval: 86400
   spotify-strip304:
     url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify-strip304.js
