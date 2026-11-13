@@ -51,7 +51,10 @@ http:
       timeout: 10
     # spotify-proto 内嵌 406KB protobuf schema，WebKit 引擎默认 10 秒跑不完，
     # 会报 script execution timed out 且只在 Core/logs 里可见。必须给足 30 秒。
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize|nebula\/v1\/configuration\/attributes|remote-config-resolver\/v3\/configuration)\/?(?:\?.*)?$'
+    # 注意不要匹配 remote-config-resolver：桌面版该接口返回 JSON，
+    # proto 按 protobuf 解码会抛 invalid wire type，异常会重置 WebKit 引擎，
+    # 连带让同期 nebula 的脚本跑不掉。
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize|nebula\/v1\/configuration\/attributes)\/?(?:\?.*)?$'
       name: spotify-proto
       type: response
       require-body: true
