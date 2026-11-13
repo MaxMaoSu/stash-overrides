@@ -53,6 +53,9 @@ icon: 'https://raw.githubusercontent.com/<user>/<repo>/main/<目录>/icon.png'
 - 512×512 PNG、透明底；从 SVG 转：`magick -background none logo.svg -resize 512x512 icon.png`。
 - 官方 logo 可取 simpleicons（`https://cdn.simpleicons.org/<slug>`，返回 SVG），
   **不要**用 Wikimedia 的 thumb 地址，会返回 HTML 错误页。
+- 改完图标要 ⌘R 重新加载配置，覆写列表条目左侧才刷新出图标。
+  订阅的「更新」按钮有时拉不到新内容（本地文件 mtime 不变），
+  直接改 iCloud 目录下的同名文件再 ⌘R 最快。
 
 ## 覆写里真正可用的键
 
