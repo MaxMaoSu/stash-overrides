@@ -17,6 +17,9 @@ stash-overrides/
 新增覆写：建 `<类别>/` 目录，`.stoverride` + 图标 + 自写脚本都放进去，README 表格加一行。
 **每个覆写必须有图标**：`.stoverride` 用 `icon: '<raw URL>'` 指向同目录 PNG
 （512×512、透明底，优先产品官方 logo），不是 `#!icon`。
+图标必须清晰、居中：SVG 转 PNG 要 `-density 2400` + `-trim` + `-extent`，
+直接 `-resize` 会糊且偏心，完整命令见 skill `stash-override-authoring`。
+换图片内容必须换文件名，Stash 按 URL 缓存图标。
 第三方脚本用远程 URL，不复制进仓库。
 
 ## 发布方式

@@ -50,12 +50,28 @@ icon: 'https://raw.githubusercontent.com/<user>/<repo>/main/<目录>/icon.png'
 ```
 
 - 图标文件与该覆写的 `.stoverride` 放同一目录，优先用产品官方 logo。
-- 512×512 PNG、透明底；从 SVG 转：`magick -background none logo.svg -resize 512x512 icon.png`。
 - 官方 logo 可取 simpleicons（`https://cdn.simpleicons.org/<slug>`，返回 SVG），
   **不要**用 Wikimedia 的 thumb 地址，会返回 HTML 错误页。
+
+**必须做对的两件事：清晰、居中。** 直接 `magick logo.svg -resize 512x512` 会先按
+72 DPI 把 24×24 的 SVG 栅格化再放大，出来是糊的；官方 SVG 自带内边距，不裁会偏心。
+
+```bash
+magick -background none -density 2400 logo.svg \
+  -resize 1024x1024 -trim +repage \
+  -resize 944x944 -gravity center -background none -extent 1024x1024 \
+  -resize 512x512 -depth 8 icon.png
+```
+
+- `-density 2400` 先按高分辨率矢量渲染，再缩小 → 边缘平滑；
+- `-trim` 裁掉原图内边距，`-extent` 重新居中，944/1024 ≈ 92%，即四周各留 4% 空白；
+- 输出 512×512、8-bit、透明底。
+
 - 改完图标要 ⌘R 重新加载配置，覆写列表条目左侧才刷新出图标。
   订阅的「更新」按钮有时拉不到新内容（本地文件 mtime 不变），
   直接改 iCloud 目录下的同名文件再 ⌘R 最快。
+- Stash 按 URL 缓存图标，**换图片内容必须换文件名**（如 `xxx-icon.png`），
+  否则列表里一直是旧图。
 
 ## 覆写里真正可用的键
 
