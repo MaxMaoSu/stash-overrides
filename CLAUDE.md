@@ -97,6 +97,24 @@ Stash 按 URL 路径缓存脚本，`interval` 未到期不会重新下载。
 - **效果判据**：底部导航的 Premium 入口消失，或窗口标题显示 `Spotify Premium`。
   音质仍无法设为「超高」，这是规则方案的固有限制。
 
+## 小红书专项
+
+移植自 QingRex/LoonKissSurge 的「小红书去广告」Surge 模块，去掉了 Stash 覆写不生效的段落。
+
+- **Surge `[Map Local]` → request 脚本**：`xiaohongshu-mock-v1.js` 在请求阶段直接
+  `$done({ response: { status: 200, body } })`。watermark 配置接口必须回 1×1 GIF
+  原始字节（`Content-Type: image/gif`），其余 4 组回 `{}`。返回 Uint8Array 要算准
+  `Content-Length`，否则客户端按长度截断。
+- **Surge `[Body Rewrite]` jq → response 脚本**：`xiaohongshu-search-v1.js` 处理搜索页
+  banner_list / hot_list / hint / trending。trending 一次请求里同时改 `queries` 和
+  `hint_word`，Surge 模块拆成了两条规则。
+- **主脚本**：RedPaper_remove_ads.js，镜像在 `Repcz/Tool`，锁 commit SHA。
+  匹配 12 组端点，覆盖信息流广告、开屏、详情页小部件、图片/视频/实况照片水印。
+  MITM 要放开 `ci` / `so` 两个非常用子域，否则 mock 与搜索脚本不触发。
+- **QUIC 必须拦**：`AND,((PROTOCOL,QUIC),(DOMAIN-SUFFIX,xiaohongshu.com)),REJECT-DROP`。
+- **效果判据**：搜索页无「猜你想搜」和 banner；开屏不出现广告图；保存图片无水印。
+- **图标**：simpleicons 的 `xiaohongshu`（红色 #FF2442 字标）。
+
 ## 第三方脚本
 
 - Reukix/ukix 的 `Spotify-{proto,home,search,scroll}.js`

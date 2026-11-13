@@ -1,0 +1,124 @@
+#SUBSCRIBED https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/xiaohongshu/Xiaohongshu.stoverride
+#!name = 小红书去广告
+#!desc = 过滤信息流推广与开屏广告，移除图片、视频水印
+name: 小红书去广告
+desc: 过滤信息流推广与开屏广告，移除图片、视频水印
+icon: 'https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/xiaohongshu/xiaohongshu-icon.png'
+
+rules:
+  # HTTP/3 完全绕过 MITM，不拦 QUIC 的话所有脚本都不会触发。
+  # 必须写注册域 xiaohongshu.com，收窄到子域会因标签边界静默失效。
+  - AND,((PROTOCOL,QUIC),(DOMAIN-SUFFIX,xiaohongshu.com)),REJECT-DROP
+
+http:
+  mitm:
+    - ci.xiaohongshu.com
+    - edith.xiaohongshu.com
+    - rec.xiaohongshu.com
+    - so.xiaohongshu.com
+    - www.xiaohongshu.com
+  script:
+    # ── 伪造响应：替代 Surge 模块的 [Map Local] ──
+    - match: '^https:\/\/ci\.xiaohongshu\.com\/system_config\/watermark'
+      name: xiaohongshu-mock
+      type: request
+      timeout: 5
+    - match: '^https:\/\/edith\.xiaohongshu\.com\/api\/sns\/v1\/surprisebox\/(?:get_style|open|submit_action)'
+      name: xiaohongshu-mock
+      type: request
+      timeout: 5
+    - match: '^https:\/\/www\.xiaohongshu\.com\/api\/marketing\/box\/trigger\?'
+      name: xiaohongshu-mock
+      type: request
+      timeout: 5
+    - match: '^https:\/\/edith\.xiaohongshu\.com\/api\/sns\/(?:v2\/guide\/user_banner|v3\/note\/guide)'
+      name: xiaohongshu-mock
+      type: request
+      timeout: 5
+    - match: '^https:\/\/www\.xiaohongshu\.com\/api\/sns\/(?:v1\/ads\/resource|v2\/hey\/\w+\/hey_gallery)'
+      name: xiaohongshu-mock
+      type: request
+      timeout: 5
+
+    # ── 搜索页推广位：替代 Surge 模块的 [Body Rewrite] jq 规则 ──
+    - match: '^https:\/\/edith\.xiaohongshu\.com\/api\/sns\/(?:v1\/search\/(?:banner_list|hot_list)|v4\/search\/(?:hint|trending))'
+      name: xiaohongshu-search
+      type: response
+      require-body: true
+      timeout: 10
+
+    # ── RedPaper：去广告 + 去水印主脚本 ──
+    - match: '^https:\/\/edith\.xiaohongshu\.com\/api\/sns\/v1\/note\/(?:imagefeed|live_photo\/save)'
+      name: redpaper
+      type: response
+      require-body: true
+      timeout: 15
+    - match: '^https:\/\/edith\.xiaohongshu\.com\/api\/sns\/v1\/system\/service\/ui\/config\?'
+      name: redpaper
+      type: response
+      require-body: true
+      timeout: 15
+    - match: '^https:\/\/edith\.xiaohongshu\.com\/api\/sns\/v1\/system_service\/config\?'
+      name: redpaper
+      type: response
+      require-body: true
+      timeout: 15
+    - match: '^https:\/\/edith\.xiaohongshu\.com\/api\/sns\/v2\/system_service\/splash_config'
+      name: redpaper
+      type: response
+      require-body: true
+      timeout: 15
+    - match: '^https:\/\/edith\.xiaohongshu\.com\/api\/sns\/v2\/(?:note\/widgets|user\/followings\/followfeed)'
+      name: redpaper
+      type: response
+      require-body: true
+      timeout: 15
+    - match: '^https:\/\/edith\.xiaohongshu\.com\/api\/sns\/v4\/followfeed\?'
+      name: redpaper
+      type: response
+      require-body: true
+      timeout: 15
+    - match: '^https:\/\/edith\.xiaohongshu\.com\/api\/sns\/v5\/recommend\/user\/follow_recommend\?'
+      name: redpaper
+      type: response
+      require-body: true
+      timeout: 15
+    - match: '^https:\/\/edith\.xiaohongshu\.com\/api\/sns\/(?:v1\/interaction\/comment\/video\/download|v5\/note\/comment\/list)'
+      name: redpaper
+      type: response
+      require-body: true
+      timeout: 15
+    - match: '^https:\/\/edith\.xiaohongshu\.com\/api\/sns\/(?:v2\/note\/feed|v3\/note\/videofeed)'
+      name: redpaper
+      type: response
+      require-body: true
+      timeout: 15
+    - match: '^https:\/\/(?:edith|rec)\.xiaohongshu\.com\/api\/sns\/v6\/homefeed\?'
+      name: redpaper
+      type: response
+      require-body: true
+      timeout: 15
+    - match: '^https:\/\/(?:edith|so)\.xiaohongshu\.com\/api\/sns\/v10\/search\/notes\?'
+      name: redpaper
+      type: response
+      require-body: true
+      timeout: 15
+    - match: '^https:\/\/(?:edith|rec|www)\.xiaohongshu\.com\/api\/sns\/(?:v4\/note\/videofeed|v10\/note\/video\/save)'
+      name: redpaper
+      type: response
+      require-body: true
+      timeout: 15
+
+# 没有 url-rewrite / body-rewrite / mock 段：实测在覆写里不生效（见仓库 CLAUDE.md），
+# 伪造响应与 body 改写全部走脚本。
+script-providers:
+  xiaohongshu-mock:
+    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/xiaohongshu/xiaohongshu-mock-v1.js
+    interval: 86400
+  xiaohongshu-search:
+    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/xiaohongshu/xiaohongshu-search-v1.js
+    interval: 86400
+  # RedPaper_remove_ads.js 锁定 Repcz/Tool 的 commit，避免上游改动导致行为漂移
+  redpaper:
+    url: https://raw.githubusercontent.com/Repcz/Tool/dab2af5b1c4846332fb99cea0586e8ec7a5a2068/Loon/Script/RedPaper/RedPaper_remove_ads.js
+    interval: 86400
