@@ -5,21 +5,23 @@ name: Spotify 解锁
 desc: 解锁 Premium 账号属性、去广告
 
 rules:
-  # 只对需要 MITM 的 spclient 域名拦截 QUIC。
-  # 不要写成 DOMAIN-SUFFIX,spotify.com —— 会连带把音频 CDN 和其它 Spotify 服务的
-  # HTTP/3 也降级到 TCP，白白增加延迟。
-  - AND,((DOMAIN-SUFFIX,spclient.spotify.com),(PROTOCOL,QUIC)),REJECT-DROP
-  - AND,((DOMAIN,spclient.wg.spotify.com),(PROTOCOL,QUIC)),REJECT-DROP
+  # 必须用域级宽匹配。regional 主机是 guc3-spclient.spotify.com，
+  # DOMAIN-SUFFIX,spclient.spotify.com 因标签边界（- 不是 .）匹配不到它，
+  # 而 QUIC 一旦漏掉就完全绕过 MITM，且没有任何日志可见。
+  # 音频 CDN 在 scdn.co / akamaized.net / spotifycdn.com，不以 spotify.com 结尾，
+  # 这条规则碰不到它们。
+  - AND,((DOMAIN-SUFFIX,spotify.com),(PROTOCOL,QUIC)),REJECT-DROP
   # 遥测/网络探测端点：REJECT 即可，REJECT-DROP 直接断连会让客户端反复重试
   - DOMAIN,aet.spotify.com,REJECT
 
 http:
   mitm:
-    # 只解密 spclient。用 *.spotify.com 会把 api/login5/apresolve 等无关域名一起解密，
-    # 既增加开销又可能影响其它功能。
-    # Stash 支持中缀通配：*spclient.spotify.com 能匹配 guc3-spclient.spotify.com。
+    # 只解密 spclient 系主机。用 *.spotify.com 会把 api/login5/apresolve 等
+    # 无关域名一起解密，既增加开销又可能影响其它功能。
+    # 三个模式都保留：*.wg 与 *-spclient.wg 是不同标签深度。
     - 'spclient.wg.spotify.com'
     - '*spclient.spotify.com'
+    - '*-spclient.wg.spotify.com'
   script:
     # 第一步：删掉条件请求头。服务器命中 ETag 会返回 304，而 304 没有响应体，
     # spotify-proto 拿到空 body 只能 passthrough，账号属性永远改不掉。
@@ -34,13 +36,14 @@ http:
       require-body: true
       binary-mode: true
       timeout: 10
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/browsita\/v[0-9]+\/browse(?:\?.*)?$'
+    # browse / scroll 保留尾部可选路径与查询串，别把 $ 卡死在 /browse 上
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/browsita\/v[0-9]+\/browse(?:\/[^?]*)?(?:\?.*)?$'
       name: spotify-search
       type: response
       require-body: true
       binary-mode: true
       timeout: 10
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/scrollsita\/v[0-9]+\/scroll\/spotify(?:\?.*)?$'
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/scrollsita\/v[0-9]+\/scroll\/spotify(?:\/[^?]*)?(?:\?.*)?$'
       name: spotify-scroll
       type: response
       require-body: true
@@ -58,13 +61,16 @@ http:
       name: spotify-json
       type: request
       timeout: 10
-  rewrite:
-    - ^https?:\/\/(spclient\.wg|.*-spclient)\.spotify\.com(:443)?\/pendragon - reject-200
-    - ^https?:\/\/.*-spclient\.spotify\.com(:443)?\/pam-view-service\/ - reject-200
-    - ^https?:\/\/.*37i9dQZF1EYkqdzj48dyYq - reject-200
 
-# 脚本锁定到具体 commit，避免上游改动导致行为漂移。
-# 升级方式：改这里的 SHA，重新拉取后验证 script-logs 里没有 passthrough / timed out。
+# 注意：这里没有 url-rewrite 段。
+# 实测 Stash 4.3.5 覆写中的 `rewrite:` / `url-rewrite:` 均不生效
+# （reject、reject-200、302 三种策略对 gabo-receiver-service 全部无效，
+#   直连与走代理返回相同的 401）。上游那几条 pendragon / pam-view / gabo 的
+#   拦截在本方案里无法复现，去广告只依赖脚本层。
+
+# Reukix 的四个脚本锁定到 commit，避免上游改动导致行为漂移。
+# strip304 与 json 走本仓库 / app2smile 的 main，改动后需等 interval 到期或重载。
+# 升级方式：改 SHA → 重载 → 确认 script-logs 尾部时间戳更新且无 passthrough / timed out。
 script-providers:
   spotify-strip304:
     url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify-strip304.js
