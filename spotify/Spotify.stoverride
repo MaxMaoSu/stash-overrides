@@ -1,4 +1,4 @@
-#SUBSCRIBED https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/Spotify.stoverride
+#SUBSCRIBED https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/Spotify.stoverride
 #!name = Spotify 解锁
 #!desc = 适配 Spotify 9.1.98 的 Nebula / Remote Config 接口及 Casita 首页去广告
 name: Spotify 解锁
@@ -80,7 +80,7 @@ http:
 # 升级方式：改 SHA → 重载 → 确认 script-logs 尾部时间戳更新且无 passthrough / timed out。
 script-providers:
   spotify-strip304:
-    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify-strip304-v2.js
+    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-strip304-v2.js
     interval: 86400
   spotify-home:
     url: https://raw.githubusercontent.com/Reukix/ukix/406b5f63dd461d551f1b03098d374bae5c7b1296/js/Spotify-home.js
