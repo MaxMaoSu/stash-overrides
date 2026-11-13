@@ -27,6 +27,14 @@ stash-overrides/
 客户端会把它当订阅源自动更新。**改文件名或路径必须同步改这一行**，
 否则客户端仍指向旧地址。改完 push，客户端重载后生效。
 
+## 跨端同步
+
+Mac 与 iPhone 共用 iCloud 目录
+`~/Library/Mobile Documents/iCloud~ws~stash~icloud/Documents/override/`。
+在 Mac 上更新覆写文件后，iCloud 会自动同步到手机，**手机端不需要任何手动操作**
+（不用重新订阅、不用重装），只会弹一次「配置已更新」提示。
+新建的覆写首次仍需在 App 里启用，之后内容更新即自动生效。
+
 ## 脚本缓存
 
 Stash 按 URL 路径缓存脚本，`interval` 未到期不会重新下载。
