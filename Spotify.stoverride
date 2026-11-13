@@ -23,10 +23,16 @@ http:
     - '*spclient.spotify.com'
     - '*-spclient.wg.spotify.com'
   script:
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/remote-config-resolver'
+      name: spotify-probe
+      type: response
+      require-body: true
+      binary-mode: true
+      timeout: 10
     # 第一步：删掉条件请求头。服务器命中 ETag 会返回 304，而 304 没有响应体，
     # spotify-proto 拿到空 body 只能 passthrough，账号属性永远改不掉。
     # Stash 没有 header-rewrite 键，只能用 request 脚本改 $request.headers。
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:nebula\/v1\/configuration\/attributes|remote-config-resolver\/v3\/configuration|bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize)(?:\?.*)?$'
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:nebula\/v1\/configuration\/attributes|bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize)(?:\?.*)?$'
       name: spotify-strip304
       type: request
       timeout: 5
@@ -51,7 +57,7 @@ http:
       timeout: 10
     # spotify-proto 内嵌 406KB protobuf schema，WebKit 引擎默认 10 秒跑不完，
     # 会报 script execution timed out 且只在 Core/logs 里可见。必须给足 30 秒。
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize|nebula\/v1\/configuration\/attributes|remote-config-resolver\/v3\/configuration)\/?(?:\?.*)?$'
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize|nebula\/v1\/configuration\/attributes)\/?(?:\?.*)?$'
       name: spotify-proto
       type: response
       require-body: true
@@ -75,6 +81,9 @@ http:
 # strip304 与 json 走本仓库 / app2smile 的 main，改动后需等 interval 到期或重载。
 # 升级方式：改 SHA → 重载 → 确认 script-logs 尾部时间戳更新且无 passthrough / timed out。
 script-providers:
+  spotify-probe:
+    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify-probe.js
+    interval: 86400
   spotify-strip304:
     url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify-strip304.js
     interval: 86400
