@@ -3,7 +3,7 @@
 #!desc = 适配 Spotify 9.1.98 的 Nebula / Remote Config 接口及 Casita 首页去广告
 name: Spotify 解锁
 desc: 解锁 Premium 账号属性、去广告
-icon: 'https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify.png'
+icon: 'https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-icon.png'
 
 rules:
   # 必须用域级宽匹配。regional 主机是 guc3-spclient.spotify.com，
