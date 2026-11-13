@@ -12,6 +12,11 @@ timeout all look identical from the outside: the app behaves as if the override
 were never installed. Never conclude "the rule doesn't work" before walking the
 five layers below — each has its own cheap check.
 
+**禁止靠猜**：不知道是哪个接口/哪条规则时，先建观测手段拿到真实 URL（临时上报
+脚本见 `stash-override-authoring`「排障」、手机端「工具 → 检视 HTTP 请求」、
+`Core/script-logs`、`Core/logs`），再改。凭经验猜着改会让用户反复重载重测，
+而且每猜一次都要重来一遍。
+
 ## 五层排查，从外到内
 
 Work outside-in. Every layer must be proven independently; do not jump to the
