@@ -10,10 +10,13 @@ stash-overrides/
 ├── CLAUDE.md                本文件：维护约定与技术细节
 └── spotify/
     ├── Spotify.stoverride
+    ├── spotify.png          覆写图标
     └── spotify-strip304-v2.js
 ```
 
-新增覆写：建 `<类别>/` 目录，`.stoverride` + 自写脚本都放进去，README 表格加一行。
+新增覆写：建 `<类别>/` 目录，`.stoverride` + 图标 + 自写脚本都放进去，README 表格加一行。
+**每个覆写必须有图标**：`.stoverride` 用 `icon: '<raw URL>'` 指向同目录 PNG
+（512×512、透明底，优先产品官方 logo），不是 `#!icon`。
 第三方脚本用远程 URL，不复制进仓库。
 
 ## 发布方式
@@ -94,3 +97,7 @@ Stash 按 URL 路径缓存脚本，`interval` 未到期不会重新下载。
 
 一律锁定 commit SHA，避免上游改动导致行为漂移。升级时改 SHA、重载，
 确认 `script-logs` 尾部时间戳更新且无 `passthrough` / `timed out`。
+
+## 项目技能
+
+`.claude/skills/stash-override-authoring`（写/改覆写）、`.claude/skills/stash-override-debug`（规则或脚本静默失效时排查）。只在本仓库会话加载。
