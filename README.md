@@ -33,10 +33,11 @@ app2smile 的 `spotify.module` / `spotify.stoverride`（2025.06.27）在 9.1.98 
 - **timeout 分级**：只有 406KB 的 `spotify-proto` 需要 30 秒，其余 5–10 秒。
 - **脚本锁 commit**：Reukix 的四个脚本固定在 `406b5f6`，避免上游改动导致行为漂移。
   升级时改 SHA，重载后确认 `script-logs/` 没有 `passthrough` / `timed out`。
-- **没有 url-rewrite 段**：实测 Stash 4.3.5 覆写里的 `rewrite:` / `url-rewrite:`
-  都不生效（reject、reject-200、302 对 `gabo-receiver-service` 全部无效，
-  直连与走代理返回同样的 401）。上游那几条 pendragon / pam-view / gabo 拦截
-  在本方案里无法复现，去广告只依赖脚本层。
+- **rewrite 系键在覆写里不可用**：官方文档的 `url-rewrite` / `header-rewrite` /
+  `body-rewrite` / `mock` 实测在 `.stoverride` 里**全部不生效**（4.3.5 / macOS）。
+  对照条件：同一文件里的 `http.mitm`、`http.script` 正常，重载也确实生效。
+  所以文档里那些优雅写法（比如 `header-rewrite request-del If-None-Match`）只能在
+  主配置里用，覆写里改请求只能走脚本。
 - **验证 rewrite 要选对端点**：`pendragon` 和 `pam-view-service` 直连就返回
   `200` 空响应，拿它们当"rewrite 生效"的证据会得出完全错误的结论。
   只有 `gabo-receiver-service`（直连 401）能区分。

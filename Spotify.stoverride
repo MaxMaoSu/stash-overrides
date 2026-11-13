@@ -62,11 +62,14 @@ http:
       type: request
       timeout: 10
 
-# 注意：这里没有 url-rewrite 段。
-# 实测 Stash 4.3.5 覆写中的 `rewrite:` / `url-rewrite:` 均不生效
-# （reject、reject-200、302 三种策略对 gabo-receiver-service 全部无效，
-#   直连与走代理返回相同的 401）。上游那几条 pendragon / pam-view / gabo 的
-#   拦截在本方案里无法复现，去广告只依赖脚本层。
+# 注意：这里没有 url-rewrite / header-rewrite / mock 段。
+# 实测 Stash 4.3.5（macOS）在**已被 MITM 的域名**上，这三组键全部不生效：
+#   - url-rewrite 的 reject / reject-200 / 302 对 gabo-receiver-service 无效
+#   - mock 指定 status-code 599 对 nebula 无效（仍返回 401）
+#   - header-rewrite 的 request-add 未注入
+# 对照组：同一文件里的 http.mitm 与 http.script 均正常工作，重载也确实生效。
+# 因此官方文档里那套 rewrite 语法只能写在主配置，覆写里用不了；
+# 要改请求 / 去请求头只能走脚本（见 spotify-strip304.js）。
 
 # Reukix 的四个脚本锁定到 commit，避免上游改动导致行为漂移。
 # strip304 与 json 走本仓库 / app2smile 的 main，改动后需等 interval 到期或重载。
