@@ -133,7 +133,7 @@ script-providers:
     url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-adblock-v1.js
     interval: 86400
   spotify-iphone-probe:
-    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-iphone-probe.js
+    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-iphone-probe-v2.js
     interval: 86400
   spotify-adclean:
     url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-adclean-v1.js
