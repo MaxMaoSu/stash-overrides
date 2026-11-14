@@ -104,6 +104,9 @@ API 密钥在 `~/.claude/secrets/stash-iphone-controller`（600），
   `sponsoredplaylist/v1/sponsored`，但请求阶段伪造空响应后用户仍反馈有广告，
   整组拦截未达效果，不保留。抓未知接口的方法见 skill
   `stash-override-authoring`「排障」。
+- **描述只写实际能力**：当前只有列表推广过滤，播放音频、播放页卡片、全屏推广
+  均未处理；`#!desc` / `desc` 不得写「去广告」。首页脚本在 Mac 日志出现过
+  `unrecognized response, passed through`，效果以 `removed ... section(s)` 为准。
 - **已知未解**：桌面版后续 nebula 请求在 proto 日志里不留记录（curl 触发正常），
   UI 表现为 premium 但无法从日志确认每次改写。
 - **效果判据**：底部导航的 Premium 入口消失，或窗口标题显示 `Spotify Premium`。

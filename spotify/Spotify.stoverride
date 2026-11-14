@@ -1,8 +1,8 @@
 #SUBSCRIBED https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/Spotify.stoverride
 #!name = Spotify 解锁
-#!desc = 适配 Spotify 9.1.98 的 Nebula / Remote Config 接口及 Casita 首页去广告
+#!desc = 适配 Spotify Nebula 接口，解锁 Premium，附实验性列表过滤
 name: Spotify 解锁
-desc: 解锁 Premium 账号属性、去广告
+desc: 解锁 Premium 账号属性、实验性列表过滤
 icon: 'https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-icon.png'
 
 rules:
@@ -27,10 +27,12 @@ http:
     # 第一步：删掉条件请求头。服务器命中 ETag 会返回 304，而 304 没有响应体，
     # spotify-proto 拿到空 body 只能 passthrough，账号属性永远改不掉。
     # Stash 没有 header-rewrite 键，只能用 request 脚本改 $request.headers。
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:nebula\/v1\/configuration\/attributes|bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize)(?:\?.*)?$'
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:nebula\/v1\/configuration\/attributes|bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize)\/?(?:\?.*)?$'
       name: spotify-strip304
       type: request
       timeout: 5
+    # 首页脚本按 protobuf 解析；Mac 端日志出现过 "unrecognized response, passed through"，
+    # 是否真的过滤以 script-logs 里的 "removed ... section(s)" 为准。
     - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/casita\/v1\/home\/default\/?(?:\?.*)?$'
       name: spotify-home
       type: response
@@ -74,10 +76,10 @@ http:
 #   - header-rewrite 的 request-add 未注入
 # 对照组：同一文件里的 http.mitm 与 http.script 均正常工作，重载也确实生效。
 # 因此官方文档里那套 rewrite 语法只能写在主配置，覆写里用不了；
-# 要改请求 / 去请求头只能走脚本（见 spotify-strip304.js）。
+# 要改请求 / 去请求头只能走脚本（见 spotify-strip304-v2.js）。
 
 # Reukix 的四个脚本锁定到 commit，避免上游改动导致行为漂移。
-# strip304 与 json 走本仓库 / app2smile 的 main，改动后需等 interval 到期或重载。
+# strip304 走本仓库 main；json 锁定到 app2smile 的 commit。改动后需等 interval 到期或重载。
 # 升级方式：改 SHA → 重载 → 确认 script-logs 尾部时间戳更新且无 passthrough / timed out。
 script-providers:
   spotify-strip304:
@@ -96,5 +98,5 @@ script-providers:
     url: https://raw.githubusercontent.com/Reukix/ukix/406b5f63dd461d551f1b03098d374bae5c7b1296/js/Spotify-proto.js
     interval: 86400
   spotify-json:
-    url: https://raw.githubusercontent.com/app2smile/rules/master/js/spotify-json.js
+    url: https://raw.githubusercontent.com/app2smile/rules/df6366a7024e0b3f0aa3510c5b791eea6f3cba89/js/spotify-json.js
     interval: 86400
