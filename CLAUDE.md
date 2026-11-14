@@ -104,7 +104,7 @@ API 密钥在 `~/.claude/secrets/stash-iphone-controller`（600），
 - **首页全宽推广卡片 = `ads/v3/ads`**：桌面版请求
   `https://guc3-spclient.spotify.com/ads/v3/ads?slots=hpto`，响应形如
   `{"pod":{"hpto":[{id, clickthrough, ...}]}}`，`hpto` 即 Home Page TakeOver。
-  `spotify-ads-v1.js` 把 `pod` 下各数组 slot 清空并保留结构，首页推广卡片消失。
+  `spotify-adclean-v1.js` 把 `pod` 下各数组 slot 清空并保留结构，首页推广卡片消失。
 - **`casita/v1/home` 当前版本桌面版不请求**：完整探测过桌面 App 的全部 spclient 请求，
   首页数据不由它下发；`spotify-home-v1.js` 在桌面端不会有日志，移动端是否请求未验证。
   实测数据见记忆 `reference-stash-overrides`。
@@ -112,9 +112,9 @@ API 密钥在 `~/.claude/secrets/stash-iphone-controller`（600），
   `sponsoredplaylist/v1/sponsored`，但请求阶段伪造空响应后用户仍反馈有广告，
   整组拦截未达效果，不保留。抓未知接口的方法见 skill
   `stash-override-authoring`「排障」。
-- **描述只写实际能力**：已处理的是首页全宽推广位；播放音频广告、播放页卡片、
-  `ad-logic/prefetch`（返回 `{"pod":{"stream":[...]}}`）均未处理。
-  `#!desc` / `desc` 不得写「去广告」。
+- **描述只写实际能力**：已处理首页全宽推广位、`ad-logic/prefetch` 的
+  `{"pod":{"stream":[...]}}`、`pendragon` 消息数组；播放音频广告与播放页卡片未处理
+  （音频广告靠 Premium 属性压掉，不走接口拦截）。`#!desc` / `desc` 不得写「去广告」。
 - **排障要点**：覆写是 `#SUBSCRIBED` 订阅源，改 GitHub main 后必须重载才生效；
   重启 App 不会重载，重载动作只在 App 内（菜单栏图标 → 重新加载配置）。
 - **已知未解**：桌面版后续 nebula 请求在 proto 日志里不留记录（curl 触发正常），

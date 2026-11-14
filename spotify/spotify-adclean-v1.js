@@ -1,8 +1,9 @@
 // 广告投递接口统一清理（response 阶段，结构化处理，不伪造错误响应）。
 //
-// 已实测的接口与结构：
+// 处理的接口与结构：
 //   GET /ads/v3/ads?slots=hpto      → {"pod":{"hpto":[{id,clickthrough,...}]}}
-//   GET /ad-logic/prefetch          → {"pod":{"stream":[...]}}
+//   GET /ad-logic/prefetch          → {"pod":{"stream":[...]}}   (实测)
+//   GET /pendragon/.../FetchMessageList → 消息数组               (按 messages 兜底，未抓包确认)
 // 共同点：广告素材都放在 `pod` 下的 slot 数组里。清空数组、保留结构，
 // 客户端拿到的是「这一屏没有广告」，不是错误响应，因此不会触发重试或异常分支。
 //
@@ -10,7 +11,6 @@
 //   ads/vN/config、ad-logic/vN/config —— 客户端广告配置，清了可能导致播放链路异常
 //   gabo-receiver-service/*/events    —— 曝光上报，拦它去不掉广告，只会丢埋点
 //   capping-api                       —— 频次控制，同上
-//   pendragon                         —— Pendo 引导弹窗，只在配置里出现时才下发
 //
 // 任何解析失败都原样放行，并把原因写进 script-logs/spotify-adclean.log。
 
