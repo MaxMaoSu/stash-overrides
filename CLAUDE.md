@@ -108,13 +108,15 @@ API 密钥在 `~/.claude/secrets/stash-iphone-controller`（600），
 - **`casita/v1/home` 当前版本桌面版不请求**：完整探测过桌面 App 的全部 spclient 请求，
   首页数据不由它下发；`spotify-home-v1.js` 在桌面端不会有日志，移动端是否请求未验证。
   实测数据见记忆 `reference-stash-overrides`。
-- **播放页 Sponsored 卡片与全屏推广的拦截已回退**：抓包定位到
-  `sponsoredplaylist/v1/sponsored`，但请求阶段伪造空响应后用户仍反馈有广告，
-  整组拦截未达效果，不保留。抓未知接口的方法见 skill
-  `stash-override-authoring`「排障」。
-- **描述只写实际能力**：已处理首页全宽推广位、`ad-logic/prefetch` 的
-  `{"pod":{"stream":[...]}}`、`pendragon` 消息数组；播放音频广告与播放页卡片未处理
-  （音频广告靠 Premium 属性压掉，不走接口拦截）。`#!desc` / `desc` 不得写「去广告」。
+- **广告拦截分两层**：response 阶段（`spotify-adclean-v1.js`）清空
+  `ads/vN/ads`、`ad-logic/prefetch`、`pendragon` 的数组，保留 JSON 结构；
+  request 阶段（`spotify-adblock-v1.js`）对 `gabo-receiver-service`、
+  `pam-view-service`、`sponsoredplaylist`、`ad-logic/vN/config`、
+  `ads/vN/config` 直接返回空响应。protobuf 端点必须回 0 字节 body，
+  给 `{}` 会让客户端解码抛异常。两层 match 不得重叠。
+- **描述只写实际能力**：已处理屏幕广告位、`ad-logic/prefetch`、`pendragon`
+  以及 gabo/pam/sponsored 等投递端点的拦截；音频广告本身靠 Premium 属性压掉，
+  且 `capping-api` 未处理。`#!desc` / `desc` 不得写「去广告」。
 - **排障要点**：覆写是 `#SUBSCRIBED` 订阅源，改 GitHub main 后必须重载才生效；
   重启 App 不会重载，重载动作只在 App 内（菜单栏图标 → 重新加载配置）。
 - **已知未解**：桌面版后续 nebula 请求在 proto 日志里不留记录（curl 触发正常），

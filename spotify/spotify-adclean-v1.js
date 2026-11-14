@@ -7,10 +7,10 @@
 // 共同点：广告素材都放在 `pod` 下的 slot 数组里。清空数组、保留结构，
 // 客户端拿到的是「这一屏没有广告」，不是错误响应，因此不会触发重试或异常分支。
 //
-// 不处理的接口（有意为之）：
-//   ads/vN/config、ad-logic/vN/config —— 客户端广告配置，清了可能导致播放链路异常
-//   gabo-receiver-service/*/events    —— 曝光上报，拦它去不掉广告，只会丢埋点
-//   capping-api                       —— 频次控制，同上
+// 其它广告端点由 spotify-adblock 在 request 阶段返回空响应：
+//   gabo-receiver-service、pam-view-service、sponsoredplaylist、
+//   ad-logic/vN/config（protobuf）、ads/vN/config
+// capping-api 属于频次控制，拦了去不掉广告，不处理。
 //
 // 任何解析失败都原样放行，并把原因写进 script-logs/spotify-adclean.log。
 

@@ -25,9 +25,9 @@ http:
     - '*-spclient.wg.spotify.com'
   script:
     # 广告链路兜底拦截：这些端点拿不到可结构化清理的数据，直接返回空 JSON 200。
-    # 覆盖 gabo（音频广告投递/曝光）、pam-view-service（全屏推广页）、capping-api、
-    # sponsoredplaylist（播放页卡片，protobuf）、ad-logic/config、ads/config。
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:gabo-receiver-service|pam-view-service|capping-api|sponsoredplaylist|ad-logic\/v[0-9]+\/config|ads\/v[0-9]+\/config)'
+    # 覆盖 gabo（音频广告投递/曝光）、pam-view-service（全屏推广页）、
+    # sponsoredplaylist（播放页卡片，protobuf）、ad-logic/config（protobuf）、ads/config（JSON）。
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:gabo-receiver-service|pam-view-service|sponsoredplaylist|ad-logic\/v[0-9]+\/config|ads\/v[0-9]+\/config)'
       name: spotify-adblock
       type: request
       timeout: 5
