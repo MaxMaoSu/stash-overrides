@@ -101,13 +101,19 @@ API 密钥在 `~/.claude/secrets/stash-iphone-controller`（600），
   连带让同期 nebula 的脚本跑不掉。
 - **304 无 body**：服务器命中 ETag 返回 304 时脚本拿不到数据，用 request 脚本
   删 `If-None-Match` / `If-Modified-Since`。只在真删到头时才返回 headers。
-- **首页全宽推广卡片 = `ads/v3/ads`**：桌面版请求
-  `https://guc3-spclient.spotify.com/ads/v3/ads?slots=hpto`，响应形如
-  `{"pod":{"hpto":[{id, clickthrough, ...}]}}`，`hpto` 即 Home Page TakeOver。
-  `spotify-adclean-v1.js` 把 `pod` 下各数组 slot 清空并保留结构，首页推广卡片消失。
-- **`casita/v1/home` 当前版本桌面版不请求**：完整探测过桌面 App 的全部 spclient 请求，
-  首页数据不由它下发；`spotify-home-v1.js` 在桌面端不会有日志，移动端是否请求未验证。
-  实测数据见记忆 `reference-stash-overrides`。
+- **广告位都在 `ads/v3/ads?slots=…`**：`hpto` = 首页顶部全宽卡，
+  `marquee` = 播放页歌词下方那张（实测 iPhone「广告 / Chase」卡片），`preroll` = 播前。
+  响应形如 `{"pod":{"<slot>":[{id, clickthrough, ...}]}}`。
+  `spotify-adclean-v1.js` 清空 `pod` 下各数组 slot、保留结构。
+- **客户端会缓存广告素材**：iPhone 上 `ads/v3/ads?slots=marquee` 已返回
+  `{"pod":{"marquee":[]}}`，界面仍显示上一张卡片；判断是否生效前先**强制退出 App**
+  （上滑关闭）再重开，别把缓存当成过滤失效。
+- **`casita/v1/home` 只有 iPhone 请求**：桌面版全量探测从未请求；
+  iPhone 首页走 `casita/v1/home/default`，响应 87–93KB protobuf，
+  section 标识形如 `spotify:section:<id>|<kind>`（实测 31 个 section，
+  kind 有 `shortcuts`、`musicfeed-*` 等）。
+- **iPhone 端脚本缓存**：`provider update` 对手机控制器返回 404 且不刷新；
+  改脚本内容要**换文件名**（`xxx-v2.js`）并同步 iCloud，再让手机重载覆写。
 - **广告拦截分两层**：response 阶段（`spotify-adclean-v1.js`）清空
   `ads/vN/ads`、`ad-logic/prefetch`、`pendragon` 的数组，保留 JSON 结构；
   request 阶段（`spotify-adblock-v1.js`）对 `gabo-receiver-service`、

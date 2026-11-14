@@ -125,6 +125,26 @@ stash-iphone conn ls --json | jq '.connections[] | {host: .metadata.host, rule, 
 - 也可以直接用 Mac 的 **Stash Dashboard → 远程控制器 → 已保存的设备 → 连接**，
   看手机的活跃连接；CLI 更适合过滤和脚本化，两者读的是同一套控制器。
 
+#### 手机端取真实响应
+
+控制器只给 host / 命中规则 / 字节数，**不给 URL 路径，也没有脚本日志接口**
+（`/script-logs`、`/logs/scripts` 均 405）。要让手机上的脚本把证据送出来：
+
+1. 本机起一个 HTTP 接收端，监听局域网地址（如 `10.0.0.2:8765`），
+   把 body 原样写文件。**必须解析 `Transfer-Encoding: chunked`**，
+   Stash 的 `$httpClient` 走 chunked，只读 `Content-Length` 会全部收成空 body。
+2. 覆写里加一条只读 response 脚本，把 `$request.url` 和响应体
+   `$httpClient.post(...)` 到这个地址；`$done` 必须写在回调里
+   （先 `$done` 会销毁 VM，请求发不出去）。
+3. 手机同步 iCloud 后打开 Stash App 重载覆写；抓完删脚本与 provider。
+
+判断手机是否真的加载了新脚本：控制器只能给 URL 与更新时间。
+`provider update` 对手机返回 404 且不刷新缓存——**改脚本内容要换文件名**
+（`xxx-v2.js`），否则端上一直跑旧版本。
+
+拿到原始 body 后在本机解析（protobuf 直接按字节扫 `spotify:...|kind` 之类标识），
+比在手机上看日志快，也不受日志等级限制。
+
 ## 覆写写法要点
 
 ```yaml
