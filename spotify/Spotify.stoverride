@@ -24,18 +24,6 @@ http:
     - '*spclient.spotify.com'
     - '*-spclient.wg.spotify.com'
   script:
-    # 广告投递与推广页：直接伪造空 200，客户端不渲染。
-    # gabo-receiver-service 下发音频广告，pam-view-service 是 Premium 全屏推广页，
-    # pendragon 是 Pendo 引导弹窗，ad-* 与 ads/ 是广告链路前缀兜底（ad-logic、ad-slot 等）。
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:gabo-receiver-service|pam-view-service|pendragon|ad-|ads\/)'
-      name: spotify-block-ads
-      type: request
-      timeout: 5
-    # 播放页的 Sponsored 卡片由 sponsoredplaylist 下发（protobuf），返回空 200。
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/sponsoredplaylist\/v[0-9]+\/'
-      name: spotify-block-sponsored
-      type: request
-      timeout: 5
     # 第一步：删掉条件请求头。服务器命中 ETag 会返回 304，而 304 没有响应体，
     # spotify-proto 拿到空 body 只能 passthrough，账号属性永远改不掉。
     # Stash 没有 header-rewrite 键，只能用 request 脚本改 $request.headers。
@@ -92,12 +80,6 @@ http:
 # strip304 与 json 走本仓库 / app2smile 的 main，改动后需等 interval 到期或重载。
 # 升级方式：改 SHA → 重载 → 确认 script-logs 尾部时间戳更新且无 passthrough / timed out。
 script-providers:
-  spotify-block-sponsored:
-    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-block-sponsored.js
-    interval: 86400
-  spotify-block-ads:
-    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-block-ads.js
-    interval: 86400
   spotify-strip304:
     url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-strip304-v2.js
     interval: 86400

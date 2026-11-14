@@ -78,6 +78,14 @@ Stash 按 URL 路径缓存脚本，`interval` 未到期不会重新下载。
    记录脚本自己的 `console.log`；`Core/logs/*.log` 记录引擎级错误（超时、pipeline 失败）。
 5. **效果**：找免费状态下恒定存在的 UI 标志消失，而不是"等一会儿没广告"。
 
+手机端排查用 CLI 直连控制器：`stash-iphone status` / `stash-iphone conn ls`；
+Mac 的 Stash Dashboard「远程控制器 → 已保存的设备 → 连接」看的是同一套连接。
+API 密钥在 `~/.claude/secrets/stash-iphone-controller`（600），
+地址由 mDNS 发现（`MaoSutekiiPhone.local:9090`）。iOS 的 `/configs` 只回极简配置，
+判断覆写是否生效要看 App 里的覆写内容或实际连接；`provider ls` 里的脚本缓存
+存在不代表仍挂载。移除脚本后 toggle 覆写开关不一定会停掉已加载的脚本 VM，
+必须退出 Stash 再重开，并用 Mac 的 `script-logs/*.log` 行数增量确认。
+
 ## Spotify 专项
 
 - **QUIC 必须拦且不能收窄**：`AND,((DOMAIN-SUFFIX,spotify.com),(PROTOCOL,QUIC)),REJECT-DROP`。
@@ -92,13 +100,10 @@ Stash 按 URL 路径缓存脚本，`interval` 未到期不会重新下载。
   连带让同期 nebula 的脚本跑不掉。
 - **304 无 body**：服务器命中 ETag 返回 304 时脚本拿不到数据，用 request 脚本
   删 `If-None-Match` / `If-Modified-Since`。只在真删到头时才返回 headers。
-- **广告分三条链路**：音频广告走 `gabo-receiver-service`，Premium 全屏推广页走
-  `pam-view-service`，Pendo 引导弹窗走 `pendragon`，三者加 `ad-*` / `ads/` 前缀兜底，
-  统一在 request 阶段返回 `{}` 200（`spotify-block-ads.js`）。这几个接口按 JSON 解码，
-  返回 0 字节 body 会抛 SyntaxError。
-- **播放页的 Sponsored 卡片走 `sponsoredplaylist/v1/sponsored`**（protobuf，用
-  `spotify-block-sponsored.js` 返回空 body 200，返回 `{}` 反而解码失败）。
-  卡片再现时先查这条，不是 gabo。抓未知接口的方法见 skill `stash-override-authoring`「排障」。
+- **播放页 Sponsored 卡片与全屏推广的拦截已回退**：抓包定位到
+  `sponsoredplaylist/v1/sponsored`，但请求阶段伪造空响应后用户仍反馈有广告，
+  整组拦截未达效果，不保留。抓未知接口的方法见 skill
+  `stash-override-authoring`「排障」。
 - **已知未解**：桌面版后续 nebula 请求在 proto 日志里不留记录（curl 触发正常），
   UI 表现为 premium 但无法从日志确认每次改写。
 - **效果判据**：底部导航的 Premium 入口消失，或窗口标题显示 `Spotify Premium`。

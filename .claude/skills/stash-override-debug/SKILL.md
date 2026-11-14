@@ -88,12 +88,42 @@ curl -s -o /dev/null -x http://127.0.0.1:7890 -w "%{http_code} %{size_download}\
   `header-rewrite` 键**，只能用 `type: request` 的脚本改 `$request.headers`，
   删掉 `If-None-Match` / `If-Modified-Since` 强制 200。
 - 脚本日志目录为空 ≠ 引擎没跑：先看 `logs/` 里的超时/失败记录。
+- **移除脚本/规则后 toggle 覆写开关可能不会停掉已加载的脚本 VM**：实测
+  `spotify-block-ads.log` 在配置已无该脚本后仍持续增长，退出 Stash 再重开
+  （不是只关窗口）后 10 秒零增长。判断是否停掉看该日志的 mtime 和行数增量。
 
 ### 5. 效果是否真的改了
 
 不要靠"用一会儿看看"。找界面上一个**免费/未解锁状态下恒定存在**的标志
 （锁形图标、Premium 入口、广告位），它消失或变化才是服务端数据被改写的证据。
 单纯"没出现广告"不算——广告周期可能还没到。
+
+### 手机端：用 CLI 连远程控制器
+
+iPhone 端日志不在本机，但 Stash 的控制器接口可以直连。手机
+「设置 → 外部访问」打开「启用外部控制」，API 密钥存入
+`~/.claude/secrets/stash-iphone-controller`（600），不要写进仓库。
+
+```bash
+# 本机已装封装脚本，自动读取密钥、按 mDNS 主机名连接
+stash-iphone status
+stash-iphone conn ls --limit 200
+stash-iphone conn ls --json | jq '.connections[] | {host: .metadata.host, rule, rulePayload}'
+```
+
+- 控制器地址用 mDNS 发现：先 `timeout 4 dns-sd -B _stash-control._tcp local`
+  拿实例名（形如 `Stash-<hash>`），再
+  `timeout 4 dns-sd -L <实例名> _stash-control._tcp local` 拿 `host:port`。
+  两条命令默认都会持续输出，必须加 `timeout`。局域网里通常不止一台，
+  看 `-L` 输出的 `name=` 确认是 `maosutekiiphone.local`，别连到 Mac 自己。
+- 认证头是 `Authorization: Bearer <API 密钥>`；`stash-cli --url` 指向非本机时
+  必须另给密钥（`--secret-stdin` 最安全）。
+- `provider ls` 能看到脚本缓存时间，但**缓存存在不等于仍挂载**；看到已删脚本
+  还在列表里，更可能是手机仍跑旧覆写。判断是否生效以手机 App
+  「覆写 → Spotify → 内容」和实际连接为准。
+- iOS 的 `/configs` 只返回极简配置，不要拿它判断覆写是否加载。
+- 也可以直接用 Mac 的 **Stash Dashboard → 远程控制器 → 已保存的设备 → 连接**，
+  看手机的活跃连接；CLI 更适合过滤和脚本化，两者读的是同一套控制器。
 
 ## 覆写写法要点
 
