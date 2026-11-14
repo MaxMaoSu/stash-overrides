@@ -23,6 +23,8 @@ http:
     - 'spclient.wg.spotify.com'
     - '*spclient.spotify.com'
     - '*-spclient.wg.spotify.com'
+    # 桌面版首页/列表走 Pathfinder GraphQL，不在 spclient 上。
+    - 'api-partner.spotify.com'
   script:
     # 第一步：删掉条件请求头。服务器命中 ETag 会返回 304，而 304 没有响应体，
     # spotify-proto 拿到空 body 只能 passthrough，账号属性永远改不掉。
@@ -43,7 +45,13 @@ http:
       max-size: 0
       timeout: 15
     # 【临时诊断，定位首页推广卡片接口后删除】只记录响应特征，不改内容。
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:quicksilver\/v[0-9]+\/messages|ads\/v[0-9]+\/config|ad-logic\/prefetch)(?:\/[^?]*)?(?:\?.*)?$'
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:quicksilver\/v[0-9]+\/messages|ads\/v[0-9]+\/(?:config|ads)|ad-logic\/(?:prefetch|v[0-9]+\/config|v[0-9]+\/session))(?:\/[^?]*)?(?:\?.*)?$'
+      name: spotify-adprobe
+      type: response
+      require-body: true
+      binary-mode: true
+      timeout: 5
+    - match: '^https:\/\/api-partner\.spotify\.com(?::443)?\/.*$'
       name: spotify-adprobe
       type: response
       require-body: true
