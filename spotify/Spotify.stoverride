@@ -27,18 +27,21 @@ http:
     # 第一步：删掉条件请求头。服务器命中 ETag 会返回 304，而 304 没有响应体，
     # spotify-proto 拿到空 body 只能 passthrough，账号属性永远改不掉。
     # Stash 没有 header-rewrite 键，只能用 request 脚本改 $request.headers。
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:nebula\/v1\/configuration\/attributes|bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize)\/?(?:\?.*)?$'
+    # casita 首页也带上：命中 ETag 回 304 时没有 body，首页脚本拿不到数据只能放行。
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:nebula\/v1\/configuration\/attributes|bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize|casita\/v[0-9]+\/home(?:\/[^?]*)?)\/?(?:\?.*)?$'
       name: spotify-strip304
       type: request
       timeout: 5
-    # 首页脚本按 protobuf 解析；Mac 端日志出现过 "unrecognized response, passed through"，
-    # 是否真的过滤以 script-logs 里的 "removed ... section(s)" 为准。
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/casita\/v1\/home\/default\/?(?:\?.*)?$'
+    # 自写脚本，先记录 status / content-type / body 类型，再决定按 protobuf 还是 JSON 过滤。
+    # 判定依据是 script-logs/spotify-home.log 里的 "removed=" 与 "error"。
+    # max-size: 0 必须给，响应体被截断会让 protobuf 解析直接抛 truncated field。
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/casita\/v[0-9]+\/home(?:\/[^?]*)?(?:\?.*)?$'
       name: spotify-home
       type: response
       require-body: true
       binary-mode: true
-      timeout: 10
+      max-size: 0
+      timeout: 15
     # browse / scroll 保留尾部可选路径与查询串，别把 $ 卡死在 /browse 上
     - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/browsita\/v[0-9]+\/browse(?:\/[^?]*)?(?:\?.*)?$'
       name: spotify-search
@@ -86,7 +89,7 @@ script-providers:
     url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-strip304-v2.js
     interval: 86400
   spotify-home:
-    url: https://raw.githubusercontent.com/Reukix/ukix/406b5f63dd461d551f1b03098d374bae5c7b1296/js/Spotify-home.js
+    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-home-v1.js
     interval: 86400
   spotify-search:
     url: https://raw.githubusercontent.com/Reukix/ukix/406b5f63dd461d551f1b03098d374bae5c7b1296/js/Spotify-search.js
