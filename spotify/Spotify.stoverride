@@ -42,10 +42,11 @@ http:
       binary-mode: true
       max-size: 0
       timeout: 15
-    # 屏幕广告位：ads/v3/ads 返回 {"pod":{slot:[...]}}，清空各 slot 数组，
-    # 保留 JSON 结构。首页顶部全宽推广（hpto）就是从这里下发的。
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/ads\/v[0-9]+\/ads(?:\?.*)?$'
-      name: spotify-ads
+    # 广告投递：ads/vN/ads（首页 hpto 等屏幕广告位）、ad-logic/prefetch、
+    # pendragon 消息，都是 JSON 且广告素材放在数组里。清空数组、保留结构。
+    # 不碰 ads/vN/config、ad-logic/vN/config（客户端广告配置）与 gabo 曝光上报。
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:ads\/v[0-9]+\/ads|ad-logic\/prefetch|pendragon)(?:\/[^?]*)?(?:\?.*)?$'
+      name: spotify-adclean
       type: response
       require-body: true
       binary-mode: true
@@ -110,6 +111,6 @@ script-providers:
   spotify-json:
     url: https://raw.githubusercontent.com/app2smile/rules/df6366a7024e0b3f0aa3510c5b791eea6f3cba89/js/spotify-json.js
     interval: 86400
-  spotify-ads:
-    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-ads-v1.js
+  spotify-adclean:
+    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-adclean-v1.js
     interval: 86400
