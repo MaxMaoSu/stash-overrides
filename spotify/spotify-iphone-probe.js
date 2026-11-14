@@ -27,13 +27,28 @@
         head += c >= 32 && c < 127 ? String.fromCharCode(c) : ".";
       }
     }
+    // 首页是 protobuf，头部看不出内容：把 body 里所有 spotify:...|xxx 标识抽出来，
+    // 看广告 section 到底用什么后缀（brand-ad / ad / promoted ...）。
+    let tags = "";
+    if (bytes && $request.url.indexOf("casita/") >= 0) {
+      let text = "";
+      for (let i = 0; i < bytes.length; i++) {
+        const c = bytes[i];
+        text += c >= 32 && c < 127 ? String.fromCharCode(c) : "\n";
+      }
+      const found = text.match(/spotify:[a-z:0-9_-]+\|[a-z0-9-]+/g) || [];
+      const kinds = {};
+      for (const f of found) kinds[f.split("|").pop()] = (kinds[f.split("|").pop()] || 0) + 1;
+      tags = " tags=" + Object.keys(kinds).map((k) => k + "x" + kinds[k]).join(",");
+    }
+
     line = [
       "status=" + $response.status,
       "ct=" + ct,
       "len=" + (bytes ? bytes.length : -1),
       "url=" + $request.url,
       "head=" + head,
-    ].join(" ");
+    ].join(" ") + tags;
   } catch (e) {
     line = "probe error " + (e && e.message ? e.message : String(e)) + " url=" + $request.url;
   }
