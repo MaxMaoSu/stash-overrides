@@ -31,11 +31,12 @@ stash-overrides/
 ```
 
 客户端会把它当订阅源自动更新。**改文件名或路径必须同步改这一行**，
-否则客户端仍指向旧地址。改完 push，客户端重载后生效（⌘R）。
+否则客户端仍指向旧地址。改完 push，客户端在菜单栏 Stash 图标 →「重新加载配置」后生效。
+`⌘R`、重启 App、`stash://reload`、控制器 API 都不触发重载（实测）。
 
 Stash 的「更新」按钮有时拉不到新内容（本地文件 mtime 不变），且可能在文件里
 重复追加 `#SUBSCRIBED` 行。此时直接改 iCloud 目录下的同名文件、只保留一行
-`#SUBSCRIBED`，再 ⌘R 重载。
+`#SUBSCRIBED`，再在菜单栏点「重新加载配置」。
 
 ## 跨端同步
 
@@ -104,8 +105,8 @@ API 密钥在 `~/.claude/secrets/stash-iphone-controller`（600），
   `https://guc3-spclient.spotify.com/ads/v3/ads?slots=hpto`，响应形如
   `{"pod":{"hpto":[{id, clickthrough, ...}]}}`，`hpto` 即 Home Page TakeOver。
   `spotify-ads-v1.js` 把 `pod` 下各数组 slot 清空并保留结构，首页推广卡片消失。
-- **`casita/v1/home` 桌面版从不请求**：完整探测过 App 的全部 spclient 请求，
-  首页数据不由它下发；`spotify-home.js` 只对移动端有意义，桌面端日志不会有记录。
+- **`casita/v1/home` 当前版本桌面版不请求**：完整探测过桌面 App 的全部 spclient 请求，
+  首页数据不由它下发；`spotify-home-v1.js` 在桌面端不会有日志，移动端是否请求未验证。
   实测数据见记忆 `reference-stash-overrides`。
 - **播放页 Sponsored 卡片与全屏推广的拦截已回退**：抓包定位到
   `sponsoredplaylist/v1/sponsored`，但请求阶段伪造空响应后用户仍反馈有广告，
