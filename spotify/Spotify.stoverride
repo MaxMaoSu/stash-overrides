@@ -89,15 +89,6 @@ http:
       name: spotify-json
       type: request
       timeout: 10
-    # 【临时诊断】把未被上面规则覆盖的 spclient 响应特征回传到本机，用于定位
-    # iPhone 播放器广告接口。放最后，不抢前面脚本；定位后删除。
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/.*$'
-      name: spotify-iphone-probe
-      type: response
-      require-body: true
-      binary-mode: true
-      timeout: 3
-
 # 注意：这里没有 url-rewrite / header-rewrite / mock 段。
 # 实测 Stash 4.3.5（macOS）在**已被 MITM 的域名**上，这三组键全部不生效：
 #   - url-rewrite 的 reject / reject-200 / 302 对 gabo-receiver-service 无效
@@ -131,9 +122,6 @@ script-providers:
     interval: 86400
   spotify-adblock:
     url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-adblock-v1.js
-    interval: 86400
-  spotify-iphone-probe:
-    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-iphone-probe-v4.js
     interval: 86400
   spotify-adclean:
     url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-adclean-v1.js
