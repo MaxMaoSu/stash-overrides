@@ -100,13 +100,22 @@ API 密钥在 `~/.claude/secrets/stash-iphone-controller`（600），
   连带让同期 nebula 的脚本跑不掉。
 - **304 无 body**：服务器命中 ETag 返回 304 时脚本拿不到数据，用 request 脚本
   删 `If-None-Match` / `If-Modified-Since`。只在真删到头时才返回 headers。
+- **首页全宽推广卡片 = `ads/v3/ads`**：桌面版请求
+  `https://guc3-spclient.spotify.com/ads/v3/ads?slots=hpto`，响应形如
+  `{"pod":{"hpto":[{id, clickthrough, ...}]}}`，`hpto` 即 Home Page TakeOver。
+  `spotify-ads-v1.js` 把 `pod` 下各数组 slot 清空并保留结构，首页推广卡片消失。
+- **`casita/v1/home` 桌面版从不请求**：完整探测过 App 的全部 spclient 请求，
+  首页数据不由它下发；`spotify-home.js` 只对移动端有意义，桌面端日志不会有记录。
+  实测数据见记忆 `reference-stash-overrides`。
 - **播放页 Sponsored 卡片与全屏推广的拦截已回退**：抓包定位到
   `sponsoredplaylist/v1/sponsored`，但请求阶段伪造空响应后用户仍反馈有广告，
   整组拦截未达效果，不保留。抓未知接口的方法见 skill
   `stash-override-authoring`「排障」。
-- **描述只写实际能力**：当前只有列表推广过滤，播放音频、播放页卡片、全屏推广
-  均未处理；`#!desc` / `desc` 不得写「去广告」。首页脚本在 Mac 日志出现过
-  `unrecognized response, passed through`，效果以 `removed ... section(s)` 为准。
+- **描述只写实际能力**：已处理的是首页全宽推广位；播放音频广告、播放页卡片、
+  `ad-logic/prefetch`（返回 `{"pod":{"stream":[...]}}`）均未处理。
+  `#!desc` / `desc` 不得写「去广告」。
+- **排障要点**：覆写是 `#SUBSCRIBED` 订阅源，改 GitHub main 后必须重载才生效；
+  重启 App 不会重载，重载动作只在 App 内（菜单栏图标 → 重新加载配置）。
 - **已知未解**：桌面版后续 nebula 请求在 proto 日志里不留记录（curl 触发正常），
   UI 表现为 premium 但无法从日志确认每次改写。
 - **效果判据**：底部导航的 Premium 入口消失，或窗口标题显示 `Spotify Premium`。

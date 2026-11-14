@@ -1,8 +1,8 @@
 #SUBSCRIBED https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/Spotify.stoverride
 #!name = Spotify 解锁
-#!desc = 适配 Spotify Nebula 接口，解锁 Premium，附实验性列表过滤
+#!desc = 适配 Spotify Nebula 接口，解锁 Premium，过滤首页全宽推广位
 name: Spotify 解锁
-desc: 解锁 Premium 账号属性、实验性列表过滤
+desc: 解锁 Premium 账号属性、过滤首页全宽推广位
 icon: 'https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-icon.png'
 
 rules:
