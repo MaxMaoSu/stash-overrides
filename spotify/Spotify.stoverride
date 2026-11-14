@@ -42,6 +42,13 @@ http:
       binary-mode: true
       max-size: 0
       timeout: 15
+    # 【临时诊断，定位首页推广卡片接口后删除】只记录响应特征，不改内容。
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:quicksilver\/v[0-9]+\/messages|ads\/v[0-9]+\/config|ad-logic\/prefetch)(?:\/[^?]*)?(?:\?.*)?$'
+      name: spotify-adprobe
+      type: response
+      require-body: true
+      binary-mode: true
+      timeout: 5
     # browse / scroll 保留尾部可选路径与查询串，别把 $ 卡死在 /browse 上
     - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/browsita\/v[0-9]+\/browse(?:\/[^?]*)?(?:\?.*)?$'
       name: spotify-search
@@ -107,4 +114,7 @@ script-providers:
     interval: 86400
   spotify-json:
     url: https://raw.githubusercontent.com/app2smile/rules/df6366a7024e0b3f0aa3510c5b791eea6f3cba89/js/spotify-json.js
+    interval: 86400
+  spotify-adprobe:
+    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-adprobe-v1.js
     interval: 86400
