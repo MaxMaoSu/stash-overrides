@@ -23,8 +23,6 @@ http:
     - 'spclient.wg.spotify.com'
     - '*spclient.spotify.com'
     - '*-spclient.wg.spotify.com'
-    # 桌面版首页/列表走 Pathfinder GraphQL，不在 spclient 上。
-    - 'api-partner.spotify.com'
   script:
     # 第一步：删掉条件请求头。服务器命中 ETag 会返回 304，而 304 没有响应体，
     # spotify-proto 拿到空 body 只能 passthrough，账号属性永远改不掉。
@@ -44,19 +42,14 @@ http:
       binary-mode: true
       max-size: 0
       timeout: 15
-    # 【临时诊断，定位首页推广卡片接口后删除】只记录响应特征，不改内容。
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:quicksilver\/v[0-9]+\/messages|ads\/v[0-9]+\/(?:config|ads)|ad-logic\/(?:prefetch|v[0-9]+\/config|v[0-9]+\/session))(?:\/[^?]*)?(?:\?.*)?$'
-      name: spotify-adprobe
+    # 屏幕广告位：ads/v3/ads 返回 {"pod":{slot:[...]}}，清空各 slot 数组，
+    # 保留 JSON 结构。首页顶部全宽推广（hpto）就是从这里下发的。
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/ads\/v[0-9]+\/ads(?:\?.*)?$'
+      name: spotify-ads
       type: response
       require-body: true
       binary-mode: true
-      timeout: 5
-    - match: '^https:\/\/api-partner\.spotify\.com(?::443)?\/.*$'
-      name: spotify-adprobe
-      type: response
-      require-body: true
-      binary-mode: true
-      timeout: 5
+      timeout: 10
     # browse / scroll 保留尾部可选路径与查询串，别把 $ 卡死在 /browse 上
     - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/browsita\/v[0-9]+\/browse(?:\/[^?]*)?(?:\?.*)?$'
       name: spotify-search
@@ -86,12 +79,6 @@ http:
       name: spotify-json
       type: request
       timeout: 10
-    # 【临时探测，定位首页真实接口后删除】记录所有 spclient 请求 URL。
-    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/.*$'
-      name: spotify-strip304
-      type: request
-      timeout: 5
-
 # 注意：这里没有 url-rewrite / header-rewrite / mock 段。
 # 实测 Stash 4.3.5（macOS）在**已被 MITM 的域名**上，这三组键全部不生效：
 #   - url-rewrite 的 reject / reject-200 / 302 对 gabo-receiver-service 无效
@@ -123,6 +110,6 @@ script-providers:
   spotify-json:
     url: https://raw.githubusercontent.com/app2smile/rules/df6366a7024e0b3f0aa3510c5b791eea6f3cba89/js/spotify-json.js
     interval: 86400
-  spotify-adprobe:
-    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-adprobe-v1.js
+  spotify-ads:
+    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-ads-v1.js
     interval: 86400
