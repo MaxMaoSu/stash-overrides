@@ -115,8 +115,9 @@ API 密钥在 `~/.claude/secrets/stash-iphone-controller`（600），
   `ads/vN/config` 直接返回空响应。protobuf 端点必须回 0 字节 body，
   给 `{}` 会让客户端解码抛异常。两层 match 不得重叠。
 - **描述只写实际能力**：已处理屏幕广告位、`ad-logic/prefetch`、`pendragon`
-  以及 gabo/pam/sponsored 等投递端点的拦截；音频广告本身靠 Premium 属性压掉，
-  且 `capping-api` 未处理。`#!desc` / `desc` 不得写「去广告」。
+  以及 gabo/pam/sponsored 等投递端点的拦截；`capping-api` 未处理。
+  音频广告是否被 Premium 属性完全抑制**未实测**，不要当作已知结论。
+  `#!desc` / `desc` 不得写「去广告」。
 - **排障要点**：覆写是 `#SUBSCRIBED` 订阅源，改 GitHub main 后必须重载才生效；
   重启 App 不会重载，重载动作只在 App 内（菜单栏图标 → 重新加载配置）。
 - **已知未解**：桌面版后续 nebula 请求在 proto 日志里不留记录（curl 触发正常），
