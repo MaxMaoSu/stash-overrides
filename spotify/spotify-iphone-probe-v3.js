@@ -27,19 +27,14 @@
         head += c >= 32 && c < 127 ? String.fromCharCode(c) : ".";
       }
     }
-    // 首页是 protobuf，头部看不出内容：把 body 里所有 spotify:...|xxx 标识抽出来，
-    // 看广告 section 到底用什么后缀（brand-ad / ad / promoted ...）。
-    let tags = "";
+    // 首页是 87KB+ protobuf，本机解析需要完整数据：直接回传原始 body。
     if (bytes && $request.url.indexOf("casita/") >= 0) {
-      let text = "";
-      for (let i = 0; i < bytes.length; i++) {
-        const c = bytes[i];
-        text += c >= 32 && c < 127 ? String.fromCharCode(c) : "\n";
-      }
-      const found = text.match(/spotify:[a-z:0-9_-]+\|[a-z0-9-]+/g) || [];
-      const kinds = {};
-      for (const f of found) kinds[f.split("|").pop()] = (kinds[f.split("|").pop()] || 0) + 1;
-      tags = " tags=" + Object.keys(kinds).map((k) => k + "x" + kinds[k]).join(",");
+      $httpClient.post({
+        url: SINK,
+        headers: { "x-kind": "home", "x-url": encodeURIComponent($request.url) },
+        body: bytes,
+      }, () => $done({}));
+      return;
     }
 
     line = [
