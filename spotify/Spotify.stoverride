@@ -27,6 +27,11 @@ http:
     # 第一步：删掉条件请求头。服务器命中 ETag 会返回 304，而 304 没有响应体，
     # spotify-proto 拿到空 body 只能 passthrough，账号属性永远改不掉。
     # Stash 没有 header-rewrite 键，只能用 request 脚本改 $request.headers。
+    # 【临时探测，定位首页真实接口后删除】记录所有 spclient 请求 URL。
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/.*$'
+      name: spotify-strip304
+      type: request
+      timeout: 5
     # casita 首页也带上：命中 ETag 回 304 时没有 body，首页脚本拿不到数据只能放行。
     - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:nebula\/v1\/configuration\/attributes|bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize|casita\/v[0-9]+\/home(?:\/[^?]*)?)\/?(?:\?.*)?$'
       name: spotify-strip304
