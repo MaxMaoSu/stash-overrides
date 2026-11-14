@@ -24,6 +24,13 @@ http:
     - '*spclient.spotify.com'
     - '*-spclient.wg.spotify.com'
   script:
+    # 广告链路兜底拦截：这些端点拿不到可结构化清理的数据，直接返回空 JSON 200。
+    # 覆盖 gabo（音频广告投递/曝光）、pam-view-service（全屏推广页）、capping-api、
+    # sponsoredplaylist（播放页卡片，protobuf）、ad-logic/config、ads/config。
+    - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/(?:gabo-receiver-service|pam-view-service|capping-api|sponsoredplaylist|ad-logic\/v[0-9]+\/config|ads\/v[0-9]+\/config)'
+      name: spotify-adblock
+      type: request
+      timeout: 5
     # 第一步：删掉条件请求头。服务器命中 ETag 会返回 304，而 304 没有响应体，
     # spotify-proto 拿到空 body 只能 passthrough，账号属性永远改不掉。
     # Stash 没有 header-rewrite 键，只能用 request 脚本改 $request.headers。
@@ -110,6 +117,9 @@ script-providers:
     interval: 86400
   spotify-json:
     url: https://raw.githubusercontent.com/app2smile/rules/df6366a7024e0b3f0aa3510c5b791eea6f3cba89/js/spotify-json.js
+    interval: 86400
+  spotify-adblock:
+    url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-adblock-v1.js
     interval: 86400
   spotify-adclean:
     url: https://raw.githubusercontent.com/MaxMaoSu/stash-overrides/main/spotify/spotify-adclean-v1.js
