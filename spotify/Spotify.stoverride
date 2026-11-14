@@ -57,6 +57,8 @@ http:
       type: response
       require-body: true
       binary-mode: true
+      # ad-logic/prefetch 的响应超过 64KB，默认 max-size 会截断，JSON 解析直接失败
+      max-size: 0
       timeout: 10
     # browse / scroll 保留尾部可选路径与查询串，别把 $ 卡死在 /browse 上
     - match: '^https:\/\/(?:[A-Za-z0-9-]+-)?spclient(?:\.wg)?\.spotify\.com(?::443)?\/browsita\/v[0-9]+\/browse(?:\/[^?]*)?(?:\?.*)?$'
